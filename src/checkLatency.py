@@ -65,6 +65,19 @@ def parsePingResultStr_mac(response):
 
     return float( response[begin+1 : end] )
 
+def parsePingResultStr_linux(response):
+    '''
+    --- 8.8.8.8 ping statistics ---
+    1 packets transmitted, 1 received, 0% packet loss, time 0ms
+    rtt min/avg/max/mdev = 4.074/4.074/4.074/0.000 ms
+    '''
+    key = "mdev = "
+    begin = response.find(key)
+    begin = response.find("/", begin+len(key)) # find first "/" after "stddev ="
+    end = response.find("/", begin+1) # find next "/" after begin
+
+    return float( response[begin+1 : end] )
+
 # Ping the ip and return the result object
 def pingServer(ip):
     command = createPingCommand()
@@ -73,11 +86,15 @@ def pingServer(ip):
 
     platformStr = sys.platform
     if platformStr.startswith("win32"):
-        response = subprocess.check_output(command + ip).decode('ASCII') 
+        response = subprocess.check_output(command + ip).decode('ASCII')
         time = parsePingResultStr_win32(response)
-    elif platformStr.startswith("linux") or platformStr.startswith("darwin"):
-        response = subprocess.check_output(command + ip, shell=True).decode('ASCII') 
+    elif platformStr.startswith("darwin"):
+        response = subprocess.check_output(command + ip, shell=True).decode('ASCII')
         time = parsePingResultStr_mac(response)
+        print(time)
+    elif platformStr.startswith("linux"):
+        response = subprocess.check_output(command + ip, shell=True).decode('ASCII')
+        time = parsePingResultStr_linux(response)
         print(time)
     else:
         raise Exception("Unsupported OS: " + platformStr)
@@ -87,7 +104,7 @@ def pingServer(ip):
     return PingResult(ip = ip, numOfBytes = 32, ttl = 51, milliseconds = time)
 
 def run():
-    logging.basicConfig(filename='latency.log', level=logging.DEBUG)
+    logging.basicConfig(filename='latency.log', level=logging.DEBUG, format="%(asctime)s %(message)s", datefmt="%Y/%m/%d %H:%M:%S")
     
     res = pingServer("8.8.8.8")
     logging.info(res)

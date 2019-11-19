@@ -5,7 +5,7 @@
 Python3 required
 
 ### TODO:
-
+1. Add a list of ips to ping
 
 ## Shell script:
 ### Script1:

@@ -5,8 +5,15 @@ import sys
 import os
 import subprocess
 import logging
+import logging.handlers
+import time
 
 from datetime import timedelta
+
+# Global variables
+g_loggerName = "GlobalLogger"
+
+# Global variables ends
 
 class PingResult:
     def __init__(self, ip = "", numOfBytes = 0, ttl = 0, milliseconds = 0):
@@ -65,6 +72,7 @@ def parsePingResultStr_mac(response):
 
     return float( response[begin+1 : end] )
 
+# Tested in Ubuntu(WSL) only
 def parsePingResultStr_linux(response):
     '''
     --- 8.8.8.8 ping statistics ---
@@ -103,18 +111,32 @@ def pingServer(ip):
     # TODO: add args to control bytes and ttl?
     return PingResult(ip = ip, numOfBytes = 32, ttl = 51, milliseconds = time)
 
-def run():
-    logging.basicConfig(filename='latency.log', level=logging.DEBUG, format="%(asctime)s %(message)s", datefmt="%Y/%m/%d %H:%M:%S")
+def initLogger():
+    logHandler = logging.handlers.TimedRotatingFileHandler("network_latency.log", when="midnight")
+    logFormatter = logging.Formatter("%(asctime)s-%(levelname)s %(message)s")
+    logHandler.setFormatter(logFormatter)
+    logger = logging.getLogger(g_loggerName)
+    logger.addHandler(logHandler)
+    logger.setLevel(logging.INFO)
+
+    return logger
+
+# Start service
+def run(interval_seconds = 5):
+
+    initLogger()
+    logger = logging.getLogger(g_loggerName)
+
+    while(True):
+        result = pingServer("8.8.8.8")
+        logger.info(result)
+        print(result.prettyPrint())
+        time.sleep(interval_seconds)
     
-    res = pingServer("8.8.8.8")
-    logging.info(res)
+    return
+
+
 
 if __name__ == "__main__":
-    # print(createPingCommand())
-    # print(timedelta(seconds = 1, microseconds= 13).total_seconds())
 
-    # pingResult = PingResult("8.8.8.8", 32, 5, 45)
-    # print(pingResult)
-
-    # print( pingServer("8.8.8.8") )
     run()

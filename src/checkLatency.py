@@ -1,3 +1,4 @@
+
 import codecs
 import argparse
 import sys
@@ -34,26 +35,53 @@ def createPingCommand():
 
 def parsePingResultStr_win32(response):
     
-    # ping result in windows is like:
-    # " Approximate round trip times in milli-seconds:
-    #      Minimum = 8ms, Maximum = 8ms, Average = 8ms "
-    # We only need to get average time, which is 8 in this case
+    '''ping result in windows is like:
+    Approximate round trip times in milli-seconds:
+          Minimum = 8ms, Maximum = 8ms, Average = 8ms "
+
+    We only need to get average time, which is 8 in this case 
+    '''
+
     key = "Average = "
     begin = response.find(key)
     end = response.find("ms", begin)
 
-    return int( response[begin+len(key) : end] )
+    return float( response[begin+len(key) : end] )
 
-def parsePingResultStr_linux(response):
-    pass
+
+def parsePingResultStr_mac(response):
+    '''ping result in mac is like:
+    --- 8.8.8.8 ping statistics ---
+    1 packets transmitted, 1 packets received, 0.0% packet loss
+    round-trip min/avg/max/stddev = 30.767/30.767/30.767/0.000 ms
+
+    We only care about average value
+    '''
+
+    key = "stddev =" 
+    begin = response.find(key)
+    begin = response.find("/", begin+len(key)) # find first "/" after "stddev ="
+    end = response.find("/", begin+1) # find next "/" after begin
+
+    return float( response[begin+1 : end] )
 
 # Ping the ip and return the result object
 def pingServer(ip):
     command = createPingCommand()
 
-    response = subprocess.check_output(command + ip).decode('ASCII') 
+    time = 0
 
-    time = parsePingResultStr_win32(response)
+    platformStr = sys.platform
+    if platformStr.startswith("win32"):
+        response = subprocess.check_output(command + ip).decode('ASCII') 
+        time = parsePingResultStr_win32(response)
+    elif platformStr.startswith("linux") or platformStr.startswith("darwin"):
+        response = subprocess.check_output(command + ip, shell=True).decode('ASCII') 
+        time = parsePingResultStr_mac(response)
+        print(time)
+    else:
+        raise Exception("Unsupported OS: " + platformStr)
+    
 
     # TODO: add args to control bytes and ttl?
     return PingResult(ip = ip, numOfBytes = 32, ttl = 51, milliseconds = time)
@@ -61,7 +89,8 @@ def pingServer(ip):
 def run():
     logging.basicConfig(filename='latency.log', level=logging.DEBUG)
     
-    logging.debug('This message should go to the log file')
+    res = pingServer("8.8.8.8")
+    logging.info(res)
 
 if __name__ == "__main__":
     # print(createPingCommand())
@@ -70,5 +99,5 @@ if __name__ == "__main__":
     # pingResult = PingResult("8.8.8.8", 32, 5, 45)
     # print(pingResult)
 
-    print( pingServer("8.8.8.8") )
+    # print( pingServer("8.8.8.8") )
     run()

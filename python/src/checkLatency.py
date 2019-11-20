@@ -1,5 +1,4 @@
 
-import codecs
 import argparse
 import sys
 import os
@@ -10,24 +9,14 @@ import time
 
 from datetime import timedelta
 
+# local import
+import shared
+from shared import PingResult
+
 # Global variables
 g_loggerName = "GlobalLogger"
 
 # Global variables ends
-
-class PingResult:
-    def __init__(self, ip = "", numOfBytes = 0, ttl = 0, milliseconds = 0):
-        self.ip = ip
-        self.numOfBytes = numOfBytes
-        self.ttl = ttl
-        self.time = timedelta(microseconds = milliseconds*1000)
-
-    def prettyPrint(self):
-        return "From " + self.ip + "; bytes=" + str(self.numOfBytes) + "; ttl=" + str(self.ttl) + "; time=" + str(self.time.total_seconds() * 1000) + " ms\n"
-
-    def __str__(self):
-        return ";".join([self.ip, str(self.numOfBytes), str(self.ttl), str(self.time.total_seconds() * 1000)])
-
 
 def createPingCommand():
     platformStr = sys.platform
@@ -99,11 +88,9 @@ def pingServer(ip):
     elif platformStr.startswith("darwin"):
         response = subprocess.check_output(command + ip, shell=True).decode('ASCII')
         time = parsePingResultStr_mac(response)
-        print(time)
     elif platformStr.startswith("linux"):
         response = subprocess.check_output(command + ip, shell=True).decode('ASCII')
         time = parsePingResultStr_linux(response)
-        print(time)
     else:
         raise Exception("Unsupported OS: " + platformStr)
     
@@ -113,7 +100,7 @@ def pingServer(ip):
 
 def initLogger():
     logHandler = logging.handlers.TimedRotatingFileHandler("network_latency.log", when="midnight")
-    logFormatter = logging.Formatter("%(asctime)s-%(levelname)s %(message)s")
+    logFormatter = logging.Formatter(shared.g_sharedLogFormat)
     logHandler.setFormatter(logFormatter)
     logger = logging.getLogger(g_loggerName)
     logger.addHandler(logHandler)

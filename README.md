@@ -1,5 +1,13 @@
 # Network Health Check
 
+## Python
+### Requirements
+Python3 required
+
+### TODO:
+1. Add a list of ips to ping
+
+## Shell script:
 ### Script1:
 Periodically ping public ip address and local router gateway FOREVER.
 Log ping latency result. Consider log rotation by hour.

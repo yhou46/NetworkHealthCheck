@@ -100,7 +100,7 @@ def pingServer(ip):
 
 def initLogger():
     logHandler = logging.handlers.TimedRotatingFileHandler("network_latency.log", when="midnight")
-    logFormatter = logging.Formatter(shared.g_sharedLogFormat)
+    logFormatter = logging.Formatter(fmt = shared.g_logFormat, datefmt=shared.g_dateFormat)
     logHandler.setFormatter(logFormatter)
     logger = logging.getLogger(g_loggerName)
     logger.addHandler(logHandler)
@@ -126,4 +126,4 @@ def run(interval_seconds = 5):
 
 if __name__ == "__main__":
 
-    run()
+    run(1)

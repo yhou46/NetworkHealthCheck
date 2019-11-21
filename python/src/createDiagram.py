@@ -1,10 +1,23 @@
 import codecs
 import argparse
+import os
+import glob
+import sys
+
+# external packages
 import matplotlib.pyplot as pyplot
 
 # local import
 import shared
 from shared import PingResult
+
+
+def initArgParser():
+    parser = argparse.ArgumentParser(description = "Create network latency charts from log files")
+
+    parser.add_argument( "-f", "--file", type=str, required=True, help="Log file names; regular expresseion accepted, like \"/usr/data/test*.log\"")
+    return parser
+
 
 # pingResultList = [ (timestamp, PingResult), ... ]
 def drawDiagram(pingResultList):
@@ -21,13 +34,26 @@ def drawDiagram(pingResultList):
 
     return
 
-def run(filePath):
-    pingResultList = shared.parse(filePath)
+# Entrance
+def main(args):
 
+    parser = initArgParser()
+    parsedArgs = parser.parse_args(args)
+
+    filePattern = ""
+    if parsedArgs.file != None:
+        filePattern = parsedArgs.file
+
+    fileList = glob.glob(filePattern)
+
+    pingResultList = []
+    for filePath in fileList:
+        pingResultList += shared.parse(filePath)
+
+    pingResultList.sort()
     drawDiagram(pingResultList)
     return
 
 if __name__ == "__main__":
 
-    filePath = "C:\\workspace\\NetworkHealthCheck\\python\src\\network_latency.log"
-    run(filePath)
+    main(sys.argv[1:])

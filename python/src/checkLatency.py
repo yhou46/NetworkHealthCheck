@@ -18,6 +18,18 @@ g_loggerName = "GlobalLogger"
 
 # Global variables ends
 
+
+# -------------------------------------------------------
+# Functions:
+# -------------------------------------------------------
+
+def initArgParser():
+    parser = argparse.ArgumentParser(description = "Check network latency and save to log file")
+
+    parser.add_argument( "-p", "--log_file_path", type=str, required=False, help="path to save log files; Default is current directory")
+    parser.add_argument( "-i", "--interval", type=int, required=False, help="seconds between 2 Pings; Default is 5")
+    return parser
+
 def createPingCommand():
     platformStr = sys.platform
 
@@ -98,8 +110,10 @@ def pingServer(ip):
     # TODO: add args to control bytes and ttl?
     return PingResult(ip = ip, numOfBytes = 32, ttl = 51, milliseconds = time)
 
-def initLogger():
-    logHandler = logging.handlers.TimedRotatingFileHandler("network_latency.log", when="midnight")
+def initLogger(logFilePath):
+
+    logFile = os.path.join(logFilePath, "network_latency.log")
+    logHandler = logging.handlers.TimedRotatingFileHandler(logFile, when="midnight")
     logFormatter = logging.Formatter(fmt = shared.g_logFormat, datefmt=shared.g_dateFormat)
     logHandler.setFormatter(logFormatter)
     logger = logging.getLogger(g_loggerName)
@@ -109,9 +123,22 @@ def initLogger():
     return logger
 
 # Start service
-def run(interval_seconds = 5):
+def main(args):
 
-    initLogger()
+    parser = initArgParser()
+    parsedArgs = parser.parse_args(args)
+
+    logFilePath = "."
+    if parsedArgs.log_file_path != None:
+        logFilePath = parsedArgs.log_file_path
+
+    interval_seconds = 5
+    if parsedArgs.log_file_path != None:
+        interval_seconds = parsedArgs.interval
+
+    print("It will ping every %d seconds and log file will be saved in \"%s\" ." %(interval_seconds, logFilePath) )
+
+    initLogger(logFilePath)
     logger = logging.getLogger(g_loggerName)
 
     while(True):
@@ -126,4 +153,4 @@ def run(interval_seconds = 5):
 
 if __name__ == "__main__":
 
-    run(1)
+    main(sys.argv[1:])

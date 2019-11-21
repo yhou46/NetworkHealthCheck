@@ -34,6 +34,9 @@ def parse(filename):
         for line in file:
             items = line.strip().split("|")
 
+            if len(items) == 0:
+                continue
+
             timestamp = datetime.datetime.strptime(items[0], g_datetimeFormat)
 
             # item[1] is logging level (INFO, ERROR...)
